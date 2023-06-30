@@ -1,0 +1,31 @@
+#!/bin/bash
+URGENT_VALUE=$((400 * `nproc`))
+LOAD=$(cat /proc/loadavg | awk -F ' ' '{print $1}')
+AVG_MIN_LOAD=$(cat /proc/loadavg | awk -F ' ' '{print int(100 * $1)}')
+AVG_FIVE_MIN_LOAD=$(cat /proc/loadavg | awk -F ' ' '{print int(100 * $2)}')
+AVG_TEN_MIN_LOAD=$(cat /proc/loadavg | awk -F ' ' '{print int(100 * $3)}')
+THREADS=$(cat /proc/loadavg | awk -F ' ' '{print $4}')
+
+if [[ "$AVG_MIN_LOAD}" != "" ]]; then
+    COLOR="#FFFFFF"
+    LABEL="  "
+    if [[ $((AVG_MIN_LOAD)) -lt  $((AVG_FIVE_MIN_LOAD)) ]]; then
+        LABEL=" "
+        COLOR="#00FF00"
+
+    elif [[ $((AVG_MIN_LOAD)) -gt $((AVG_FIVE_MIN_LOAD)) ]]; then
+        LABEL=" "
+        COLOR="#FF0000"
+    fi
+    if [[ "$BLOCK_INSTANCE" == "simple"  ]]; then
+        echo "${LOAD} ${LABEL}"
+    else
+        echo "${LOAD} ${LABEL} 🧵 ${THREADS}"
+    fi
+    echo "load ${LOAD}"
+    echo "$COLOR"
+
+    if [[ "${LOAD_PERC}" -ge "${URGENT_VALUE}" ]]; then
+        exit 33
+    fi
+fi

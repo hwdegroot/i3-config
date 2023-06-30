@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Left click
+# Left click
+if [[ $((BLOCK_BUTTON)) -eq 1 ]] || [[ $((BLOCK_BUTTON)) -eq 4 ]]; then
+  amixer -q sset Master 5%+
+# Middle click
+elif [[ $((BLOCK_BUTTON)) -eq 2 ]]; then
+  amixer -q sset Master toggle
+# Right click
+elif [[ $((BLOCK_BUTTON)) -eq 3 ]] || [[ $((BLOCK_BUTTON)) -eq 5 ]]; then
+  amixer -q sset Master 5%-
+fi
+
+statusLine=$(amixer get Master | tail -n 1)
+status=$(echo "${statusLine}" | grep -wo "on")
+volume=$(echo "${statusLine}" | grep -Po '\[[0-9]+%\]' | tr -d '[]%')
+
+if [[ "${status}" == "on" ]]; then
+    if [[ $((volume)) -gt 50 ]]; then
+        LABEL="🔊"
+    else
+        LABEL="🔉"
+    fi
+    echo "${LABEL} ${volume}%"
+    echo "墳${volume}%"
+    echo ""
+else
+  echo "🔇 mute"
+    echo "婢"
+    echo "#ffff00"
+    echo ""
+fi

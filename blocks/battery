@@ -1,0 +1,115 @@
+#!/bin/bash
+
+BATTERY=${BLOCK_INSTANCE//BAT/}
+BATTERY_INFO=$(acpi -b | grep "Battery ${BATTERY}")
+if [[ -z "$BATTERY_INFO" ]] || [[ ! -z "$(echo $BATTERY_INFO | grep 'rate information unavailable')" ]]; then
+    exit 1
+fi
+BATTERY_STATE=$(echo "${BATTERY_INFO}" | grep -wo "Full\|Charging\|Discharging\|Unknown\|Not charging")
+BATTERY_POWER=$(echo "${BATTERY_INFO}" | grep -o '[0-9]\+%' | tr -d '%')
+
+URGENT_VALUE=10
+ON_AC="$(cat /sys/class/power_supply/AC/online)"
+#if [[ "$ON_AC" == "1" ]]; then
+    #if [[ $((BATTERY_POWER)) -gt 95 ]]; then
+    #  LABEL=" "
+    #elif [[ $((BATTERY_POWER)) -gt 90 ]]; then
+    #  LABEL=" "
+    #elif [[ $((BATTERY_POWER)) -gt 80 ]]; then
+    #  LABEL=" "
+    #elif [[ $((BATTERY_POWER)) -gt 70 ]]; then
+    #  LABEL=" "
+    #elif [[ $((BATTERY_POWER)) -gt 60 ]]; then
+    #  LABEL=" "
+    if [[ $((BATTERY_POWER)) -gt 10 ]]; then
+        LABEL="🔋"
+    #elif [[ $((BATTERY_POWER)) -gt 30 ]]; then
+    #    LABEL=" "
+    #elif [[ $((BATTERY_POWER)) -gt 10 ]]; then
+    #    LABEL=" "
+    #fi
+    else
+        LABEL="🪫"
+    fi
+#elif [[ $((BATTERY_POWER)) -gt 90 ]]; then
+#  LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 80 ]]; then
+#  LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 70 ]]; then
+#  LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 60 ]]; then
+#  LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 50 ]]; then
+#    LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 40 ]]; then
+#    LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 30 ]]; then
+#    LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 20 ]]; then
+#    LABEL=" "
+#elif [[ $((BATTERY_POWER)) -gt 10 ]]; then
+#    LABEL=" "
+#else
+#    LABEL=" "
+#fi
+
+if [[ $((BATTERY_POWER)) -gt 80 ]]; then
+    COLOR="#52BE80"
+elif [[ $((BATTERY_POWER)) -gt 60 ]]; then
+    COLOR="#F1C40F"
+elif [[ $((BATTERY_POWER)) -gt 40 ]]; then
+    COLOR="#F39C12"
+elif [[ $((BATTERY_POWER)) -gt 20 ]]; then
+    COLOR="#E67E22"
+elif [[ $((BATTERY_POWER)) -gt 10 ]]; then
+    COLOR="#E74C3C"
+else
+    COLOR="#FF0000"
+fi
+
+
+if [[ ! -z "$TIME" ]]; then
+    TIME_REMAINING=" ($TIME)"
+else
+    TIME_REMAINING=""
+fi
+
+if [[ "$BATTERY_STATE" == "Charging" ]]; then
+    DIRECTION="🔌"
+elif [[ "$BATTERY_STATE" == "Discharging" ]]; then
+    DIRECTION="⚡"
+elif [[ "${BATTERY_STATE}" = "Full" ]] || [[ "${BATTERY_POWER}" = "100" ]]; then
+    DIRECTION=""
+elif [[ "$BATTERY_STATE" == "Not charging" ]] && [[ "$ON_AC" != "1" ]]; then
+    DIRECTION="👾"
+else
+    DIRECTION=""
+fi
+if [[ "${BATTERY_STATE}" = "Charging" ]] || [[ "${BATTERY_STATE}" = "Not charging" ]]; then
+    echo "${LABEL}${BATTERY_POWER}% ${DIRECTION}${TIME_REMAINING}"
+    echo "$LABEL${BATTERY_POWER}% "
+    echo "$COLOR"
+elif [[ "${BATTERY_STATE}" = "Discharging" ]]; then
+    echo "${LABEL}${BATTERY_POWER}% ${DIRECTION}${TIME_REMAINING}"
+    echo "$LABEL${BATTERY_POWER}%-"
+    echo "$COLOR"
+elif [[ "${BATTERY_STATE}" = "Full" ]] || [[ "${BATTERY_POWER}" = "100" ]]; then
+    echo "${LABEL}${BATTERY_POWER}% ${DIRECTION}"
+    echo "$LABEL${BATTERY_POWER}% "
+    echo "$COLOR"
+    echo ""
+elif [[ "${BATTERY_STATE}" = "Unknown" ]]; then # empty
+    echo "${LABEL}${BATTERY_POWER}%"
+    echo "(b${BATTERY})${BATTERY_POWER}%"
+    echo "$COLOR"
+    exit 33
+else
+    echo "⁉ ${BATTERY_POWER}%"
+    echo "(b${BATTERY})${BATTERY_POWER}%"
+    echo "#FF0000"
+    exit 33
+fi
+
+if [[ "${BATTERY_POWER}" -le "${URGENT_VALUE}" ]] && [[ "$BATTERY_STATE" == "Discharging"  ]]; then
+    exit 33
+fi

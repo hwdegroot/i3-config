@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# One of the following: xrandr, xbacklight, kernel
+METHOD="kernel"
+
+# Left click
+if [[ $((BLOCK_BUTTON)) -eq 1 ]] || [[ $((BLOCK_BUTTON)) -eq 4 ]]; then
+  `dirname $0`/adjust_brightness +5
+# Right click
+elif [[ $((BLOCK_BUTTON)) -eq 3 ]] || [[ $((BLOCK_BUTTON)) -eq 5 ]]; then
+  `dirname $0`/adjust_brightness -5
+fi
+
+
+URGENT_VALUE=10
+
+if [[ "${METHOD}" = "xrandr" ]]; then
+  device="${BLOCK_INSTANCE:-primary}"
+  xrandrOutput=$(xrandr --verbose)
+
+  if [[ "${device}" = "primary" ]]; then
+    device=$(echo "${xrandrOutput}" | /bin/grep 'primary' | head -n 1 | awk -F ' ' '{print $1}')
+  fi
+
+  curBrightness=$(echo "${xrandrOutput}" | /bin/grep "${device}" -A 5 | /bin/grep -i "Brightness" | awk -F ':' '{print $2}')
+elif [[ "${METHOD}" = "kernel" ]]; then
+  device="${BLOCK_INSTANCE:-intel_backlight}"
+  maxBrightness=$(cat /sys/class/backlight/${device}/max_brightness)
+  curBrightness=$(cat /sys/class/backlight/${device}/brightness)
+elif [[ "${METHOD}" = "xbacklight" ]]; then
+  curBrightness=$(xbacklight -get)
+fi
+
+if [[ "${curBrightness}" -le 0 ]]; then
+  curBrightness=0
+fi
+
+if [[ "${METHOD}" = "xrandr" ]]; then
+  percent=$(echo "scale=0;${curBrightness} * 100" | bc -l)
+elif [[ "${METHOD}" = "kernel" ]]; then
+  percent=$(echo "scale=0;100 * ${curBrightness} / ${maxBrightness}" | bc -l)
+elif [[ "${METHOD}" = "xbacklight" ]]; then
+  percent=$(echo "scale=0;${curBrightness}" | bc -l)
+fi
+percent=${percent%.*}
+
+if [[ "${percent}" -le 0 ]]; then
+  percent=0
+fi
+
+
+echo "${percent}%"
+echo " ${percent}%"
+if [[ $((percent)) -lt 20 ]]; then
+    echo "#808080"
+elif [[ $((percent)) -lt 30 ]]; then
+    echo "#909090"
+elif [[ $((percent)) -lt 40 ]]; then
+    echo "#A0A0A0"
+elif [[ $((percent)) -lt 50 ]]; then
+    echo "#B0B0B0"
+elif [[ $((percent)) -lt 60 ]]; then
+    echo "#C0C0C0"
+elif [[ $((percent)) -lt 70 ]]; then
+    echo "#D0D0D0"
+elif [[ $((percent)) -lt 80 ]]; then
+    echo "#E0E0E0"
+elif [[ $((percent)) -lt 90 ]]; then
+    echo "#F0F0F0"
+else
+    echo "#FFFFFF"
+fi
+
+
+if [[ "${percent}" -le "${URGENT_VALUE}" ]]; then
+  exit 33
+fi

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+STATUS=$(systemctl status bluetooth | grep -o 'active (running)')
+if [[ "${BLOCK_BUTTON}" -eq 1 ]]; then
+    if [[ -z "${STATUS}" ]]; then
+        sudo systemctl start bluetooth
+    else
+        sudo systemctl stop bluetooth
+    fi
+elif [[ "${BLOCK_BUTTON}" -eq 3 ]]; then
+  sudo systemctl start bluetooth
+fi
+
+STATUS=$(systemctl status bluetooth | grep -o 'active (running)')
+
+if [[ ! -z "${STATUS}" ]]; then
+  echo " on"
+  echo " on"
+  echo "#76BAFF"
+else
+  echo " off"
+  echo " off"
+  echo "#DFEFFF"
+fi
