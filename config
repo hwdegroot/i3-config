@@ -37,8 +37,9 @@ for_window [class="Yad"] floating enable
 floating_modifier $mod
 
 # start a terminal
+bindsym $mod+Return exec gnome-terminal
 #bindsym $mod+Return exec i3-sensible-terminal
-bindsym $mod+Return exec ~/.config/i3/i3-term.sh
+#bindsym $mod+Return exec ~/.config/i3/i3-term.sh
 
 
 # kill focused window
